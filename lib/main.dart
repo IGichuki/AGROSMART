@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_success_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
         '/login-success': (context) => const LoginSuccessScreen(),
+        '/admin-dashboard': (context) => const AdminDashboardScreen(),
       },
     );
   }
