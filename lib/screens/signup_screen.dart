@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -30,10 +32,13 @@ class _SignupScreenState extends State<SignupScreen>
       duration: const Duration(milliseconds: 1200),
     );
     _fieldAnimations = List.generate(6, (i) {
+      // Ensure the end value does not exceed 1.0
+      final double start = i * 0.1;
+      final double end = (start + 0.6).clamp(0.0, 1.0);
       return Tween<Offset>(begin: Offset(1.5, 0), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(i * 0.1, 0.7 + i * 0.1, curve: Curves.easeOut),
+          curve: Interval(start, end, curve: Curves.easeOut),
         ),
       );
     });
@@ -177,10 +182,53 @@ class _SignupScreenState extends State<SignupScreen>
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             if (_formKey.currentState?.validate() ?? false) {
                               _formKey.currentState?.save();
-                              // TODO: Implement signup logic
+                              try {
+                                final userCredential = await FirebaseAuth
+                                    .instance
+                                    .createUserWithEmailAndPassword(
+                                      email: email.trim(),
+                                      password: password.trim(),
+                                    );
+                                // Store additional user data in Firestore
+                                await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(userCredential.user!.uid)
+                                    .set({
+                                      'firstName': firstName.trim(),
+                                      'lastName': lastName.trim(),
+                                      'phone': phone.trim(),
+                                      'email': email.trim(),
+                                      'createdAt': FieldValue.serverTimestamp(),
+                                    });
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Signup successful!'),
+                                  ),
+                                );
+                                Navigator.pop(context);
+                              } on FirebaseAuthException catch (e) {
+                                String msg = 'Signup failed';
+                                if (e.code == 'email-already-in-use') {
+                                  msg = 'Email already in use';
+                                } else if (e.code == 'invalid-email') {
+                                  msg = 'Invalid email address';
+                                } else if (e.code == 'weak-password') {
+                                  msg = 'Password is too weak';
+                                }
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(SnackBar(content: Text(msg)));
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('An error occurred.'),
+                                  ),
+                                );
+                              }
                             }
                           },
                           child: const Text(

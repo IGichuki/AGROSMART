@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "306474505935",
+    "firebase_url": "https://agrosmart-c2d80-default-rtdb.firebaseio.com",
+    "project_id": "agrosmart-c2d80",
+    "storage_bucket": "agrosmart-c2d80.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:306474505935:android:afdc8b21dd64503a5e09ba",
+        "android_client_info": {
+          "package_name": "com.agrosmart.crop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbkmwWgkNNJCNgGo5mwy4ln3F6Lrr1B8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
