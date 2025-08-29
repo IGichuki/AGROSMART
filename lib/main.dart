@@ -2,12 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
-import 'screens/user_dashboard_screen.dart';
-import 'screens/analytics_page.dart';
-import 'screens/irrigation_page.dart';
-import 'screens/settings_page.dart';
-import 'screens/profile_page.dart';
-import 'screens/admin_dashboard_screen.dart';
+import 'screens/user/user_dashboard_screen.dart';
+import 'screens/user/analytics_page.dart';
+import 'screens/user/irrigation_page.dart';
+import 'screens/user/settings_page.dart';
+import 'screens/user/profile_page.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
