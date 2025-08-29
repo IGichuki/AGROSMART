@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -31,28 +31,33 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo and app name
-              Column(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.green[700],
-                    child: Icon(
-                      Icons.agriculture,
-                      size: 48,
-                      color: Colors.white,
+              Padding(
+                padding: const EdgeInsets.only(top: 32.0, bottom: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 48,
+                      backgroundColor: Colors.green[700],
+                      child: Icon(
+                        Icons.agriculture,
+                        size: 56,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'agrosmart',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800],
-                      letterSpacing: 2,
+                    const SizedBox(height: 16),
+                    Text(
+                      'agrosmart',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[800],
+                        letterSpacing: 2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
               TextFormField(
                 controller: _emailController,
