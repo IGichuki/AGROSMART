@@ -192,6 +192,9 @@ class _SignupScreenState extends State<SignupScreen>
                                       email: email.trim(),
                                       password: password.trim(),
                                     );
+                                // Send email verification
+                                await userCredential.user
+                                    ?.sendEmailVerification();
                                 // Store additional user data in Firestore
                                 await FirebaseFirestore.instance
                                     .collection('users')
@@ -206,7 +209,9 @@ class _SignupScreenState extends State<SignupScreen>
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Signup successful!'),
+                                    content: Text(
+                                      'Signup successful! Please check your email to verify your account before logging in.',
+                                    ),
                                   ),
                                 );
                                 Navigator.pop(context);
