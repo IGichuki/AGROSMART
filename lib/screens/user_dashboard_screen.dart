@@ -226,35 +226,3 @@ class _NavButton extends StatelessWidget {
     );
   }
 }
-
-class _StatusIndicator extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-  const _StatusIndicator({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: color,
-          ),
-        ),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-      ],
-    );
-  }
-}

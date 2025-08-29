@@ -1,17 +1,69 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/F63P1L7A)
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=20100708&assignment_repo_type=AssignmentRepo)
 
-# agrosmart
+# AGROSMART – Onion Farm Monitor
 
-This is a Flutter mobile application scaffolded as the starting point for your project. Firebase integration will be set up next.
+AGROSMART is a modern Flutter mobile application designed for onion farm monitoring, featuring Firebase integration, role-based authentication, and a user-friendly dashboard for both farmers and admins.
+
+## Features Implemented
+
+- **Flutter + Firebase Integration**
+  - Firebase Auth (email/password)
+  - Cloud Firestore (user data)
+- **Role-Based Login**
+  - Separate dashboards for Admin and Farmer roles
+- **2-Step Verification**
+  - Email verification during registration
+- **Modern User Dashboard**
+  - Custom navigation bar and reusable dashboard scaffold
+  - Pages: Dashboard, Analytics, Irrigation, Settings, Profile
+  - Navigation between pages with persistent user info
+- **Admin Dashboard**
+  - Admin-specific features and management tools
+- **Custom App Icon**
+  - Agricultural theme icon set via `flutter_launcher_icons`
+- **UI/UX**
+  - Clean, modern design with consistent theming
+  - FontAwesome icons for visual clarity
+
+## Project Structure
+
+- `lib/main.dart` – App entry, routing, and theme
+- `lib/screens/` – All major screens (login, signup, dashboards, analytics, etc.)
+- `lib/widgets/` – Reusable widgets (e.g., custom text fields)
+- `assets/` – App icon and images
 
 ## Getting Started
 
-- To run the app:
-  1. Open a terminal in this directory.
-  2. Run `flutter pub get` to fetch dependencies.
-  3. Run `flutter run` to launch the app on an emulator or device.
+1. **Install dependencies:**
+   ```sh
+   flutter pub get
+   ```
+2. **Run the app:**
+   ```sh
+   flutter run
+   ```
+3. **Firebase setup:**
+   - Ensure your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) are in place.
 
-## Next Steps
-- Firebase integration will be configured.
-- Update this README as you add features.
+## How It Works
+
+- **Login/Signup:** Users register and log in with email/password. 2-step verification is enforced.
+- **Role Selection:** On login, users are routed to either the Admin or Farmer dashboard based on their role in Firestore.
+- **Dashboard Navigation:** Users can switch between Dashboard, Analytics, Irrigation, Settings, and Profile pages. Navigation preserves user info (e.g., last name).
+- **Admin Dashboard:** Admins can manage farmers, configure thresholds, and view analytics.
+
+## Dependencies
+- `firebase_core`
+- `firebase_auth`
+- `cloud_firestore`
+- `font_awesome_flutter`
+- `flutter_launcher_icons`
+
+## To Do / Next Steps
+- Add more analytics and irrigation features
+- Enhance profile management
+- Add push notifications
+- Polish UI and add more widgets
+
+---
+
+*This README reflects the current state of the project as of August 29, 2025. Update as new features are added!*
