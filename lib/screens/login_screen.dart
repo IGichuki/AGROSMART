@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -105,8 +106,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                         return;
                       }
+                      // Fetch last name from Firestore
+                      String lastName = '';
+                      try {
+                        final userDoc = await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user!.uid)
+                            .get();
+                        if (userDoc.exists && userDoc.data() != null) {
+                          lastName = userDoc.data()!['lastName'] ?? '';
+                        }
+                      } catch (_) {}
                       if (!mounted) return;
-                      Navigator.pushReplacementNamed(context, '/login-success');
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/user-dashboard',
+                        arguments: {'lastName': lastName},
+                      );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

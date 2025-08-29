@@ -2,7 +2,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
-import 'screens/login_success_screen.dart';
+import 'screens/user_dashboard_screen.dart';
+import 'screens/analytics_page.dart';
+import 'screens/irrigation_page.dart';
+import 'screens/settings_page.dart';
+import 'screens/profile_page.dart';
 import 'screens/admin_dashboard_screen.dart';
 
 void main() async {
@@ -50,7 +54,83 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/login-success': (context) => const LoginSuccessScreen(),
+        '/user-dashboard': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          return UserDashboardScaffold(
+            lastName: lastName,
+            currentIndex: 0,
+            body: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Welcome, Mr. ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                          fontSize: 18,
+                        ),
+                      ),
+                      Text(
+                        lastName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF22c55e),
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // ...dashboard cards and widgets can be added here...
+              ],
+            ),
+          );
+        },
+        '/analytics': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          return AnalyticsPage(lastName: lastName);
+        },
+        '/irrigation': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          return IrrigationPage(lastName: lastName);
+        },
+        '/settings': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          return SettingsPage(lastName: lastName);
+        },
+        '/profile': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          return ProfilePage(lastName: lastName);
+        },
         '/admin-dashboard': (context) => const AdminDashboardScreen(),
       },
     );
