@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dashboard_page.dart';
+import 'user_management_page.dart';
+import 'sensor_data_page.dart';
+import 'irrigation_settings_page.dart';
+import 'reports_analytics_page.dart';
+import 'system_health_page.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);
@@ -140,140 +146,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       case 0:
         return Center(child: Text('Dashboard'));
       case 1:
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'User Management',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Add New User'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF22c55e),
-                      ),
-                      onPressed: () => _showUserDialog(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Name')),
-                        DataColumn(label: Text('Email')),
-                        DataColumn(label: Text('Farm ID')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Role')),
-                        DataColumn(label: Text('Actions')),
-                      ],
-                      rows: users.map((user) {
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(user['name'])),
-                            DataCell(Text(user['email'])),
-                            DataCell(Text(user['farmId'])),
-                            DataCell(Text(user['status'])),
-                            DataCell(Text(user['role'])),
-                            DataCell(
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.visibility,
-                                      color: Colors.blue,
-                                    ),
-                                    tooltip: 'View',
-                                    onPressed: () => _showUserDialog(
-                                      user: user,
-                                      viewOnly: true,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.edit,
-                                      color: Colors.orange,
-                                    ),
-                                    tooltip: 'Edit',
-                                    onPressed: () =>
-                                        _showUserDialog(user: user),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
-                                    tooltip: 'Delete',
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: const Text('Delete User'),
-                                          content: const Text(
-                                            'Are you sure you want to delete this user?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(ctx).pop(),
-                                              child: const Text('Cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  users.remove(user);
-                                                });
-                                                Navigator.of(ctx).pop();
-                                              },
-                                              child: const Text(
-                                                'Delete',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return const UserManagementPage();
       case 2:
-        return Center(child: Text('Sensor Data'));
+        return const SensorDataPage();
       case 3:
-        return Center(child: Text('Irrigation Settings'));
+        return const IrrigationSettingsPage();
       case 4:
-        return Center(child: Text('Reports & Analytics'));
+        return const ReportsAnalyticsPage();
       case 5:
-        return Center(child: Text('System Health'));
+        return const SystemHealthPage();
       case 6:
         return Center(child: Text('Settings'));
       default:
