@@ -23,6 +23,31 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Logo and app name
+              Column(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.green[700],
+                    child: Icon(
+                      Icons.agriculture,
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'agrosmart',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800],
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
