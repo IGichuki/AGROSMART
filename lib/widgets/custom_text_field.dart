@@ -8,13 +8,13 @@ class CustomTextField extends StatelessWidget {
   final void Function(String?)? onSaved;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.label,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
     this.validator,
     this.onSaved,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
