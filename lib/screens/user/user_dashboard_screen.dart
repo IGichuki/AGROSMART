@@ -16,7 +16,7 @@ class UserDashboardScaffold extends StatelessWidget {
 
   void _onNavTap(BuildContext context, int index) {
     if (index == currentIndex) return;
-    final args = {'lastName': lastName};
+    final args = {'lastName': lastName, 'navIndex': index};
     switch (index) {
       case 0:
         Navigator.pushReplacementNamed(
