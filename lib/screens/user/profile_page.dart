@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_dashboard_screen.dart';
 
+// Simple theme notifier for dark mode
+class ThemeNotifier extends InheritedWidget {
+  final ValueNotifier<bool> isDarkMode;
+  const ThemeNotifier({
+    required this.isDarkMode,
+    required Widget child,
+    Key? key,
+  }) : super(key: key, child: child);
+  static ThemeNotifier? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ThemeNotifier>();
+  @override
+  bool updateShouldNotify(ThemeNotifier oldWidget) =>
+      isDarkMode != oldWidget.isDarkMode;
+}
+
 class ProfilePage extends StatefulWidget {
+  // Wrap the app or main scaffold with ThemeNotifier in your main.dart for global effect.
   final String lastName;
-  const ProfilePage({super.key, required this.lastName});
+  final int navIndex;
+  const ProfilePage({super.key, required this.lastName, this.navIndex = 4});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -25,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildSectionContent() {
     switch (selectedSection) {
       case 0:
-        return _UserInfoSection(lastName: widget.lastName);
+        return const _UserInfoSection();
       case 1:
         return _FarmDetailsSection();
       case 2:
@@ -43,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return UserDashboardScaffold(
       lastName: widget.lastName,
-      currentIndex: 4,
+      currentIndex: widget.navIndex,
       body: Row(
         children: [
           AnimatedContainer(
@@ -95,7 +113,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     selected: false,
                     isLogout: true,
                     onTap: () {
-                      // TODO: Implement logout logic
                       showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
@@ -111,11 +128,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             TextButton(
                               onPressed: () async {
                                 Navigator.of(ctx).pop();
-                                // Sign out from Firebase if available
                                 try {
                                   await FirebaseAuth.instance.signOut();
                                 } catch (e) {}
-                                // Navigate to LoginScreen and clear stack
                                 if (mounted) {
                                   Navigator.of(context).pushNamedAndRemoveUntil(
                                     '/login',
@@ -207,50 +222,79 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-// Section widgets
 class _UserInfoSection extends StatelessWidget {
-  final String lastName;
-  const _UserInfoSection({required this.lastName});
+  const _UserInfoSection();
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: const Color(0xFF22c55e),
-              child: const Icon(Icons.person, color: Colors.white, size: 44),
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Center(child: Text('No user logged in.'));
+    }
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Center(child: Text('User data not found.'));
+        }
+        final data = snapshot.data!.data() as Map<String, dynamic>?;
+        final firstName = data?['firstName'] ?? '';
+        final lastName = data?['lastName'] ?? '';
+        final email = data?['email'] ?? user.email ?? '';
+        final phone = data?['phone'] ?? '';
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: const Color(0xFF22c55e),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 44,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '$firstName $lastName',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  email,
+                  style: TextStyle(color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (phone.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    phone,
+                    style: TextStyle(color: Colors.grey[700]),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: 18),
-            Text(
-              'John Doe',
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'johndoe@email.com',
-              style: TextStyle(color: Colors.grey[700]),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Last Name: $lastName',
-              style: const TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -358,7 +402,59 @@ class _AccountSettingsSection extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.lock_outline, color: Color(0xFF22c55e)),
               title: Text('Change Password', overflow: TextOverflow.ellipsis),
-              onTap: () {},
+              onTap: () async {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No user logged in.')),
+                  );
+                  return;
+                }
+                final email = user.email;
+                if (email == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No email found for user.')),
+                  );
+                  return;
+                }
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Change Password'),
+                    content: const Text(
+                      'Are you sure you want to change your password? An email will be sent to your address.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('No'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Yes'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  try {
+                    await FirebaseAuth.instance.sendPasswordResetEmail(
+                      email: email,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Password reset email sent. Please check your inbox.',
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to send reset email: $e')),
+                    );
+                  }
+                }
+              },
             ),
             ListTile(
               leading: Icon(Icons.email_outlined, color: Color(0xFF22c55e)),
@@ -374,14 +470,22 @@ class _AccountSettingsSection extends StatelessWidget {
               ),
               onTap: () {},
             ),
-            SwitchListTile(
-              value: false,
-              onChanged: (v) {},
-              title: Text('Dark Mode', overflow: TextOverflow.ellipsis),
-              secondary: Icon(
-                Icons.dark_mode_outlined,
-                color: Color(0xFF22c55e),
-              ),
+            Builder(
+              builder: (context) {
+                final themeNotifier = ThemeNotifier.of(context);
+                final isDark = themeNotifier?.isDarkMode.value ?? false;
+                return SwitchListTile(
+                  value: isDark,
+                  onChanged: (v) {
+                    themeNotifier?.isDarkMode.value = v;
+                  },
+                  title: Text('Dark Mode', overflow: TextOverflow.ellipsis),
+                  secondary: Icon(
+                    Icons.dark_mode_outlined,
+                    color: Color(0xFF22c55e),
+                  ),
+                );
+              },
             ),
           ],
         ),
