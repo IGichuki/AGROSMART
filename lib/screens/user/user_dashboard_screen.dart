@@ -7,12 +7,12 @@ class UserDashboardScaffold extends StatelessWidget {
   final Widget body;
   final int
   currentIndex; // 0:dashboard, 1:analytics, 2:irrigation, 3:settings, 4:profile
-  const UserDashboardScaffold({
-    super.key,
+  UserDashboardScaffold({
+    Key? key,
     required this.lastName,
     required this.body,
     required this.currentIndex,
-  });
+  }) : super(key: key);
 
   void _onNavTap(BuildContext context, int index) {
     if (index == currentIndex) return;
@@ -45,9 +45,9 @@ class UserDashboardScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FDF9),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
+        preferredSize: const Size.fromHeight(56),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: const BoxDecoration(
             color: Colors.white,
             boxShadow: [
@@ -79,6 +79,7 @@ class UserDashboardScaffold extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
+                      SizedBox(height: 16),
                       Text(
                         'AGROSMART',
                         style: TextStyle(
@@ -131,7 +132,9 @@ class UserDashboardScaffold extends StatelessWidget {
           ),
         ),
       ),
-      body: body,
+      body: currentIndex == 0
+          ? SingleChildScrollView(child: Column(children: [body]))
+          : body,
       bottomNavigationBar: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),

@@ -8,6 +8,7 @@ import 'screens/user/irrigation_page.dart';
 import 'screens/user/settings_page.dart';
 import 'screens/user/profile_page.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'widgets/weather_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,25 +83,33 @@ class _MyAppWithThemeState extends State<MyAppWithTheme> {
                 return UserDashboardScaffold(
                   lastName: lastName,
                   currentIndex: navIndex,
-                  body: ListView(
+                  body: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Welcome, $lastName',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 22,
-                                color: Colors.black87,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Welcome, $lastName',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 22,
+                                  color: Colors.black87,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        // Weather widget below welcome
+                        SizedBox(
+                          width: double.infinity,
+                          child: WeatherWidget(),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
