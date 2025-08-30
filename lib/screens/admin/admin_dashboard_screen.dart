@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dashboard_page.dart';
 import 'user_management_page.dart';
 import 'sensor_data_page.dart';
 import 'irrigation_settings_page.dart';
@@ -45,101 +44,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     },
   ];
 
-  void _showUserDialog({Map<String, dynamic>? user, bool viewOnly = false}) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final nameController = TextEditingController(text: user?['name'] ?? '');
-        final emailController = TextEditingController(
-          text: user?['email'] ?? '',
-        );
-        final farmIdController = TextEditingController(
-          text: user?['farmId'] ?? '',
-        );
-        String status = user?['status'] ?? 'Active';
-        String role = user?['role'] ?? 'Farmer';
-        return AlertDialog(
-          title: Text(
-            viewOnly
-                ? 'User Info'
-                : user == null
-                ? 'Add User'
-                : 'Edit User',
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  enabled: !viewOnly,
-                ),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  enabled: !viewOnly,
-                ),
-                TextField(
-                  controller: farmIdController,
-                  decoration: const InputDecoration(labelText: 'Farm ID'),
-                  enabled: !viewOnly,
-                ),
-                DropdownButtonFormField<String>(
-                  value: status,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: ['Active', 'Inactive']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: viewOnly ? null : (v) => status = v ?? status,
-                  disabledHint: Text(status),
-                ),
-                DropdownButtonFormField<String>(
-                  value: role,
-                  decoration: const InputDecoration(labelText: 'Role'),
-                  items: ['Farmer', 'Admin']
-                      .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                      .toList(),
-                  onChanged: viewOnly ? null : (v) => role = v ?? role,
-                  disabledHint: Text(role),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Close'),
-            ),
-            if (!viewOnly)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    if (user == null) {
-                      users.add({
-                        'name': nameController.text,
-                        'email': emailController.text,
-                        'farmId': farmIdController.text,
-                        'status': status,
-                        'role': role,
-                      });
-                    } else {
-                      user['name'] = nameController.text;
-                      user['email'] = emailController.text;
-                      user['farmId'] = farmIdController.text;
-                      user['status'] = status;
-                      user['role'] = role;
-                    }
-                  });
-                  Navigator.of(ctx).pop();
-                },
-                child: Text(user == null ? 'Add' : 'Save'),
-              ),
-          ],
-        );
-      },
-    );
-  }
+  // Removed unused and broken _showUserDialog function
 
   Widget _buildPage() {
     switch (selectedIndex) {
