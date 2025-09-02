@@ -47,7 +47,7 @@ class UserDashboardScaffold extends StatelessWidget {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: const BoxDecoration(
             color: Colors.white,
             boxShadow: [
@@ -58,82 +58,89 @@ class UserDashboardScaffold extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF22c55e),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(
-                      FontAwesomeIcons.droplet,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      SizedBox(height: 16),
-                      Text(
-                        'AGROSMART',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF22c55e),
-                        ),
-                      ),
-                      Text(
-                        'Onion Farm Monitor',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Flexible(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+          child: SafeArea(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF22c55e),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22c55e),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(
+                            FontAwesomeIcons.droplet,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'AGROSMART',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF22c55e),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Flexible(
                       child: Row(
-                        children: const [
-                          Icon(Icons.wifi, color: Colors.white, size: 18),
-                          SizedBox(width: 4),
-                          Text(
-                            'Connected',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
                             ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF22c55e),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: const [
+                                Icon(Icons.wifi, color: Colors.white, size: 18),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Connected',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Icon(
+                            Icons.settings,
+                            color: Colors.grey,
+                            size: 22,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    const Icon(Icons.settings, color: Colors.grey, size: 22),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
       body: currentIndex == 0
-          ? SingleChildScrollView(child: Column(children: [body]))
+          ? RefreshIndicator(
+              onRefresh: () async {
+                // Add your reload logic here
+                await Future.delayed(const Duration(seconds: 1));
+              },
+              child: ListView(children: [body]),
+            )
           : body,
       bottomNavigationBar: Container(
         color: Colors.white,
