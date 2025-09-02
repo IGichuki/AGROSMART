@@ -1,285 +1,271 @@
+import 'package:agrosmart/screens/admin/user_management_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'user_management_page.dart';
-import 'sensor_data_page.dart';
-import 'irrigation_settings_page.dart';
-import 'reports_analytics_page.dart';
-import 'system_health_page.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);
 
-  @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
+  Future<Map<String, int>> fetchDashboardData() async {
+    final firestore = FirebaseFirestore.instance;
+    final usersSnapshot = await firestore.collection('users').get();
+    final sensorsSnapshot = await firestore.collection('sensors').get();
+    final reportsSnapshot = await firestore.collection('reports').get();
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  int selectedIndex = 0;
-  bool sidebarExpanded = true;
-
-  final List<_SidebarItemData> sidebarItems = [
-    _SidebarItemData('Dashboard', Icons.dashboard),
-    _SidebarItemData('User Management', Icons.people),
-    _SidebarItemData('Sensor Data', Icons.sensors),
-    _SidebarItemData('Irrigation Settings', Icons.water),
-    _SidebarItemData('Reports & Analytics', Icons.bar_chart),
-    _SidebarItemData('System Health', Icons.health_and_safety),
-    _SidebarItemData('Settings', Icons.settings),
-  ];
-
-  // Mock user data for User Management
-  List<Map<String, dynamic>> users = [
-    {
-      'name': 'John Doe',
-      'email': 'john@example.com',
-      'farmId': 'FARM001',
-      'status': 'Active',
-      'role': 'Farmer',
-    },
-    {
-      'name': 'Jane Smith',
-      'email': 'jane@example.com',
-      'farmId': 'FARM002',
-      'status': 'Inactive',
-      'role': 'Farmer',
-    },
-  ];
-
-  // Removed unused and broken _showUserDialog function
-
-  Widget _buildPage() {
-    switch (selectedIndex) {
-      case 0:
-        return Center(child: Text('Dashboard'));
-      case 1:
-        return const UserManagementPage();
-      case 2:
-        return const SensorDataPage();
-      case 3:
-        return const IrrigationSettingsPage();
-      case 4:
-        return const ReportsAnalyticsPage();
-      case 5:
-        return const SystemHealthPage();
-      case 6:
-        return Center(child: Text('Settings'));
-      default:
-        return Center(child: Text('Page'));
-    }
+    return {
+      'users': usersSnapshot.size,
+      'sensors': sensorsSnapshot.size,
+      'reports': reportsSnapshot.size,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FBF6),
-      body: Row(
-        children: [
-          // Sidebar
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: sidebarExpanded ? 210 : 64,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1B5E20),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Text('Admin Dashboard'),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                // Add your reload logic here
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminDashboardScreen(),
+                  ),
+                );
+              },
             ),
-            child: Column(
-              children: [
-                // Add top padding to align with header
-                const SizedBox(height: 64),
-                // Logo
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: sidebarExpanded ? 12.0 : 0,
-                  ),
-                  child: sidebarExpanded
-                      ? Row(
-                          children: [
-                            Image.asset('assets/agricon.jpg', height: 36),
-                            const Padding(
-                              padding: EdgeInsets.only(left: 12.0),
-                              child: Text(
-                                'AGROSMART',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
+          ],
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFf3f4f6),
+              Color.fromARGB(255, 88, 205, 164),
+            ], // Neutral gradient
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: FutureBuilder<Map<String, int>>(
+            future: fetchDashboardData(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return const Center(child: Text('Error loading data'));
+              } else if (snapshot.hasData) {
+                final data = snapshot.data!;
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin Dashboard',
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87, // Neutral text color
                             ),
-                          ],
-                        )
-                      : Center(
-                          child: Image.asset('assets/agricon.jpg', height: 36),
-                        ),
-                ),
-                const SizedBox(height: 32),
-                // Sidebar items
-                ...List.generate(sidebarItems.length, (i) {
-                  final item = sidebarItems[i];
-                  return Material(
-                    color: selectedIndex == i
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.transparent,
-                    child: InkWell(
-                      onTap: () => setState(() => selectedIndex = i),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 8,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(item.icon, color: Colors.white, size: 24),
-                            if (sidebarExpanded)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 16),
-                                child: Text(
-                                  item.label,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-                const Spacer(),
-                // Logout button
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                    vertical: 4,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () async {
-                        // Sign out and go to login
-                        try {
-                          await Future.delayed(
-                            const Duration(milliseconds: 100),
-                          );
-                          // If using FirebaseAuth:
-                          // await FirebaseAuth.instance.signOut();
-                        } catch (e) {}
-                        if (mounted) {
-                          Navigator.of(
-                            context,
-                          ).pushNamedAndRemoveUntil('/login', (route) => false);
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.5),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.logout, color: Colors.red[200], size: 22),
-                          if (sidebarExpanded)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8.0),
-                              child: Text(
-                                'Logout',
-                                style: TextStyle(
-                                  color: Colors.redAccent,
-                                  fontWeight: FontWeight.bold,
+                          _buildOverviewCard(
+                            'Users',
+                            data['users'].toString(),
+                            Icons.people,
+                            Colors.blue,
+                          ),
+                          _buildOverviewCard(
+                            'Sensors',
+                            data['sensors'].toString(),
+                            Icons.sensors,
+                            Colors.teal, // Adjusted color
+                          ),
+                          _buildOverviewCard(
+                            'Reports',
+                            data['reports'].toString(),
+                            Icons.bar_chart,
+                            Colors.orange,
+                          ),
+                        ],
+                      ).animate().fadeIn(duration: 700.ms).slideY(begin: 0.5),
+                      const SizedBox(height: 32),
+                      Text(
+                        'Sections',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87, // Neutral text color
+                        ),
+                      ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.5),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          children: [
+                            _buildSectionCard(
+                              context,
+                              title: 'User Management',
+                              icon: Icons.people,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const UserManagementPage(),
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Collapse/Expand button
-                IconButton(
-                  icon: Icon(
-                    sidebarExpanded ? Icons.chevron_left : Icons.chevron_right,
-                    color: Colors.white,
-                  ),
-                  onPressed: () =>
-                      setState(() => sidebarExpanded = !sidebarExpanded),
-                  tooltip: sidebarExpanded ? 'Collapse' : 'Expand',
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
-          ),
-          // Main content
-          Expanded(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Top bar
-                  Container(
-                    height: 64,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 4),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Spacer(),
-                        // Notifications
-                        IconButton(
-                          icon: const Icon(
-                            Icons.notifications,
-                            color: Color(0xFF388E3C),
-                          ),
-                          onPressed: () {},
-                          tooltip: 'Notifications',
-                        ),
-                        // Profile dropdown
-                        PopupMenuButton<String>(
-                          icon: const CircleAvatar(
-                            backgroundColor: Color(0xFF22c55e),
-                            child: Icon(
-                              Icons.admin_panel_settings,
-                              color: Colors.white,
+                            _buildSectionCard(
+                              context,
+                              title: 'Sensor Data',
+                              icon: Icons.sensors,
+                              onTap: () =>
+                                  Navigator.pushNamed(context, '/sensor-data'),
                             ),
-                          ),
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'settings',
-                              child: Text('Admin Settings'),
+                            _buildSectionCard(
+                              context,
+                              title: 'Irrigation Settings',
+                              icon: Icons.water,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/irrigation-settings',
+                              ),
                             ),
-                            const PopupMenuItem(
-                              value: 'logout',
-                              child: Text('Logout'),
+                            _buildSectionCard(
+                              context,
+                              title: 'Reports & Analytics',
+                              icon: Icons.bar_chart,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/reports-analytics',
+                              ),
+                            ),
+                            _buildSectionCard(
+                              context,
+                              title: 'System Health',
+                              icon: Icons.health_and_safety,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/system-health',
+                              ),
+                            ),
+                            _buildSectionCard(
+                              context,
+                              title: 'Settings',
+                              icon: Icons.settings,
+                              onTap: () =>
+                                  Navigator.pushNamed(context, '/settings'),
                             ),
                           ],
-                          onSelected: (value) {
-                            // TODO: Implement actions
-                          },
-                        ),
-                      ],
-                    ),
+                        ).animate().fadeIn(duration: 700.ms).slideY(begin: 0.5),
+                      ),
+                    ],
                   ),
-                  // Main page content
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: _buildPage(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                );
+              } else {
+                return const Center(child: Text('No data available'));
+              }
+            },
           ),
-        ],
+        ),
       ),
     );
   }
-}
 
-class _SidebarItemData {
-  final String label;
-  final IconData icon;
-  const _SidebarItemData(this.label, this.icon);
+  Widget _buildOverviewCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Expanded(
+      child: Card(
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ).animate().scale(duration: 300.ms),
+    );
+  }
+
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 50, color: Theme.of(context).primaryColor),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

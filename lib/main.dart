@@ -26,146 +26,132 @@ class _MyAppWithThemeState extends State<MyAppWithTheme> {
 
   @override
   Widget build(BuildContext context) {
-    return ThemeNotifier(
-      isDarkMode: isDarkMode,
-      child: ValueListenableBuilder<bool>(
-        valueListenable: isDarkMode,
-        builder: (context, dark, _) {
-          return MaterialApp(
-            title: 'Agrosmart',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              brightness: dark ? Brightness.dark : Brightness.light,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.green,
-                primary: Colors.green[800]!,
-                secondary: Colors.brown[400]!,
-                brightness: dark ? Brightness.dark : Brightness.light,
-              ),
-              scaffoldBackgroundColor: dark
-                  ? Colors.grey[900]
-                  : Colors.green[50],
-              appBarTheme: AppBarTheme(
-                backgroundColor: dark
-                    ? Colors.grey[850]
-                    : const Color(0xFF388E3C),
-                foregroundColor: Colors.white,
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: dark ? Colors.grey[800] : Colors.white,
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
+    return MaterialApp(
+      title: 'Agrosmart',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: isDarkMode.value ? Brightness.dark : Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.green,
+          primary: Colors.green[800]!,
+          secondary: Colors.brown[400]!,
+          brightness: isDarkMode.value ? Brightness.dark : Brightness.light,
+        ),
+        scaffoldBackgroundColor: isDarkMode.value
+            ? Colors.grey[900]
+            : Colors.green[50],
+        appBarTheme: AppBarTheme(
+          backgroundColor: isDarkMode.value
+              ? Colors.grey[850]
+              : const Color(0xFF388E3C),
+          foregroundColor: Colors.white,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(),
+          filled: true,
+          fillColor: isDarkMode.value ? Colors.grey[800] : Colors.white,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[700],
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-            initialRoute: '/login',
-            routes: {
-              '/login': (context) => const LoginScreen(),
-              '/signup': (context) => const SignupScreen(),
-              '/user-dashboard': (context) {
-                final args =
-                    ModalRoute.of(context)?.settings.arguments
-                        as Map<String, dynamic>?;
-                final lastName = args != null && args['lastName'] != null
-                    ? args['lastName'] as String
-                    : '';
-                final navIndex = args != null && args['navIndex'] != null
-                    ? args['navIndex'] as int
-                    : 0;
-                return UserDashboardScaffold(
-                  lastName: lastName,
-                  currentIndex: navIndex,
-                  body: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+      ),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/profile': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          return ProfilePage(lastName: lastName);
+        },
+        '/user-dashboard': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          final navIndex = args != null && args['navIndex'] != null
+              ? args['navIndex'] as int
+              : 0;
+          return UserDashboardScaffold(
+            lastName: lastName,
+            currentIndex: navIndex,
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Row(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Welcome, $lastName',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 22,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          'Welcome, $lastName',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 22,
+                            color: Colors.black87,
                           ),
-                        ),
-                        // Weather widget below welcome
-                        SizedBox(
-                          width: double.infinity,
-                          child: WeatherWidget(),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-              '/analytics': (context) {
-                final args =
-                    ModalRoute.of(context)?.settings.arguments
-                        as Map<String, dynamic>?;
-                final lastName = args != null && args['lastName'] != null
-                    ? args['lastName'] as String
-                    : '';
-                final navIndex = args != null && args['navIndex'] != null
-                    ? args['navIndex'] as int
-                    : 1;
-                return AnalyticsPage(lastName: lastName, navIndex: navIndex);
-              },
-              '/irrigation': (context) {
-                final args =
-                    ModalRoute.of(context)?.settings.arguments
-                        as Map<String, dynamic>?;
-                final lastName = args != null && args['lastName'] != null
-                    ? args['lastName'] as String
-                    : '';
-                final navIndex = args != null && args['navIndex'] != null
-                    ? args['navIndex'] as int
-                    : 2;
-                return IrrigationPage(lastName: lastName, navIndex: navIndex);
-              },
-              '/settings': (context) {
-                final args =
-                    ModalRoute.of(context)?.settings.arguments
-                        as Map<String, dynamic>?;
-                final lastName = args != null && args['lastName'] != null
-                    ? args['lastName'] as String
-                    : '';
-                final navIndex = args != null && args['navIndex'] != null
-                    ? args['navIndex'] as int
-                    : 3;
-                return SettingsPage(lastName: lastName, navIndex: navIndex);
-              },
-              '/profile': (context) {
-                final args =
-                    ModalRoute.of(context)?.settings.arguments
-                        as Map<String, dynamic>?;
-                final lastName = args != null && args['lastName'] != null
-                    ? args['lastName'] as String
-                    : '';
-                final navIndex = args != null && args['navIndex'] != null
-                    ? args['navIndex'] as int
-                    : 4;
-                return ProfilePage(lastName: lastName, navIndex: navIndex);
-              },
-              '/admin-dashboard': (context) => const AdminDashboardScreen(),
-            },
+                  // Weather widget below welcome
+                  SizedBox(width: double.infinity, child: WeatherWidget()),
+                ],
+              ),
+            ),
           );
         },
-      ),
+        '/analytics': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          final navIndex = args != null && args['navIndex'] != null
+              ? args['navIndex'] as int
+              : 1;
+          return AnalyticsPage(lastName: lastName, navIndex: navIndex);
+        },
+        '/irrigation': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          final navIndex = args != null && args['navIndex'] != null
+              ? args['navIndex'] as int
+              : 2;
+          return IrrigationPage(lastName: lastName, navIndex: navIndex);
+        },
+        '/settings': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final lastName = args != null && args['lastName'] != null
+              ? args['lastName'] as String
+              : '';
+          final navIndex = args != null && args['navIndex'] != null
+              ? args['navIndex'] as int
+              : 3;
+          return SettingsPage(lastName: lastName, navIndex: navIndex);
+        },
+        '/admin-dashboard': (context) => const AdminDashboardScreen(),
+      },
     );
   }
 }
