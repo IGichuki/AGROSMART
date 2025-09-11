@@ -61,7 +61,10 @@ class _SignupScreenState extends State<SignupScreen>
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFa8e063), Color(0xFF56ab2f)],
+            colors: [
+              Color(0xFF43cea2),
+              Color(0xFF185a9d),
+            ], // Updated gradient to match LoginScreen
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
