@@ -1,4 +1,6 @@
 import 'package:agrosmart/screens/admin/user_management_page.dart';
+import 'package:agrosmart/screens/admin/irrigation_settings_page.dart';
+import 'package:agrosmart/screens/admin/system_health_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -46,11 +48,11 @@ class AdminDashboardScreen extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFf3f4f6),
-              Color.fromARGB(255, 88, 205, 164),
-            ], // Neutral gradient
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+              Color(0xFF43cea2),
+              Color(0xFF185a9d),
+            ], // Updated gradient to match LoginScreen
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: SafeArea(
@@ -73,7 +75,7 @@ class AdminDashboardScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87, // Neutral text color
+                              color: Colors.white,
                             ),
                       ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.5),
                       const SizedBox(height: 16),
@@ -138,9 +140,12 @@ class AdminDashboardScreen extends StatelessWidget {
                               context,
                               title: 'Irrigation Settings',
                               icon: Icons.water,
-                              onTap: () => Navigator.pushNamed(
+                              onTap: () => Navigator.push(
                                 context,
-                                '/irrigation-settings',
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const IrrigationSettingsPage(),
+                                ),
                               ),
                             ),
                             _buildSectionCard(
@@ -154,19 +159,15 @@ class AdminDashboardScreen extends StatelessWidget {
                             ),
                             _buildSectionCard(
                               context,
-                              title: 'System Health',
-                              icon: Icons.health_and_safety,
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                '/system-health',
-                              ),
-                            ),
-                            _buildSectionCard(
-                              context,
-                              title: 'Settings',
+                              title: 'System Settings',
                               icon: Icons.settings,
-                              onTap: () =>
-                                  Navigator.pushNamed(context, '/settings'),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SystemSettingsPage(),
+                                ),
+                              ),
                             ),
                           ],
                         ).animate().fadeIn(duration: 700.ms).slideY(begin: 0.5),
