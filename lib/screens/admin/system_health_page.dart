@@ -112,6 +112,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         centerTitle: true,
         backgroundColor: Colors.teal,
       ),
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -129,161 +130,166 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
             elevation: 8,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Add New Crop',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Add New Crop',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _newCropController,
-                          decoration: InputDecoration(
-                            labelText: 'Crop Name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _newCropController,
+                            decoration: InputDecoration(
+                              labelText: 'Crop Name',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
+                        const SizedBox(width: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            final cropName = _newCropController.text.trim();
+                            if (cropName.isNotEmpty) {
+                              _addNewCrop(cropName);
+                              _newCropController.clear();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Add'),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 32, thickness: 1),
+                    FutureBuilder<List<String>>(
+                      future: _fetchCrops(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          return const Text('Error loading crops');
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return const Text('No crops available');
+                        } else {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              DropdownButtonFormField<String>(
+                                value: selectedCrop,
+                                items: snapshot.data!
+                                    .map(
+                                      (crop) => DropdownMenuItem(
+                                        value: crop,
+                                        child: Text(crop),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    _loadThresholds(value);
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'Select Crop',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: selectedCrop != null
+                                    ? () => _deleteCrop(selectedCrop!)
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('Delete Selected Crop'),
+                              ),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    if (selectedCrop != null)
+                      Expanded(
+                        child: Form(
+                          key: _formKey,
+                          child: ListView(
+                            children: [
+                              _buildThresholdField(
+                                label: 'Soil Moisture Min (%)',
+                                initialValue: thresholds['soilMoistureMin']
+                                    .toString(),
+                                onSaved: (value) =>
+                                    thresholds['soilMoistureMin'] = int.parse(
+                                      value!,
+                                    ),
+                              ),
+                              _buildThresholdField(
+                                label: 'Soil Moisture Max (%)',
+                                initialValue: thresholds['soilMoistureMax']
+                                    .toString(),
+                                onSaved: (value) =>
+                                    thresholds['soilMoistureMax'] = int.parse(
+                                      value!,
+                                    ),
+                              ),
+                              _buildThresholdField(
+                                label: 'Irrigation Duration (mins)',
+                                initialValue: thresholds['irrigationDuration']
+                                    .toString(),
+                                onSaved: (value) =>
+                                    thresholds['irrigationDuration'] =
+                                        int.parse(value!),
+                              ),
+                              _buildThresholdField(
+                                label: 'Humidity Range (%)',
+                                initialValue: thresholds['humidityRange'],
+                                onSaved: (value) =>
+                                    thresholds['humidityRange'] = value!,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 16),
+                    const SizedBox(height: 16),
+                    if (selectedCrop != null)
                       ElevatedButton(
-                        onPressed: () {
-                          final cropName = _newCropController.text.trim();
-                          if (cropName.isNotEmpty) {
-                            _addNewCrop(cropName);
-                            _newCropController.clear();
-                          }
-                        },
+                        onPressed: _updateThresholds,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.teal,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Add'),
+                        child: const Text('Update Thresholds'),
                       ),
-                    ],
-                  ),
-                  const Divider(height: 32, thickness: 1),
-                  FutureBuilder<List<String>>(
-                    future: _fetchCrops(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return const Text('Error loading crops');
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Text('No crops available');
-                      } else {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DropdownButtonFormField<String>(
-                              value: selectedCrop,
-                              items: snapshot.data!
-                                  .map(
-                                    (crop) => DropdownMenuItem(
-                                      value: crop,
-                                      child: Text(crop),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  _loadThresholds(value);
-                                }
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Select Crop',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: selectedCrop != null
-                                  ? () => _deleteCrop(selectedCrop!)
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text('Delete Selected Crop'),
-                            ),
-                          ],
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  if (selectedCrop != null)
-                    Expanded(
-                      child: Form(
-                        key: _formKey,
-                        child: ListView(
-                          children: [
-                            _buildThresholdField(
-                              label: 'Soil Moisture Min (%)',
-                              initialValue: thresholds['soilMoistureMin']
-                                  .toString(),
-                              onSaved: (value) =>
-                                  thresholds['soilMoistureMin'] = int.parse(
-                                    value!,
-                                  ),
-                            ),
-                            _buildThresholdField(
-                              label: 'Soil Moisture Max (%)',
-                              initialValue: thresholds['soilMoistureMax']
-                                  .toString(),
-                              onSaved: (value) =>
-                                  thresholds['soilMoistureMax'] = int.parse(
-                                    value!,
-                                  ),
-                            ),
-                            _buildThresholdField(
-                              label: 'Irrigation Duration (mins)',
-                              initialValue: thresholds['irrigationDuration']
-                                  .toString(),
-                              onSaved: (value) =>
-                                  thresholds['irrigationDuration'] = int.parse(
-                                    value!,
-                                  ),
-                            ),
-                            _buildThresholdField(
-                              label: 'Humidity Range (%)',
-                              initialValue: thresholds['humidityRange'],
-                              onSaved: (value) =>
-                                  thresholds['humidityRange'] = value!,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  if (selectedCrop != null)
-                    ElevatedButton(
-                      onPressed: _updateThresholds,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Update Thresholds'),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

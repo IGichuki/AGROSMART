@@ -183,7 +183,22 @@ class _UserInfoSection extends StatelessWidget {
   }
 }
 
-class _FarmDetailsSection extends StatelessWidget {
+class _FarmDetailsSection extends StatefulWidget {
+  const _FarmDetailsSection({Key? key}) : super(key: key);
+
+  @override
+  State<_FarmDetailsSection> createState() => _FarmDetailsSectionState();
+}
+
+class _FarmDetailsSectionState extends State<_FarmDetailsSection> {
+  String? selectedCrop;
+  Future<List<String>> _fetchCrops() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('cropThresholds')
+        .get();
+    return snapshot.docs.map((doc) => doc.id).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -229,10 +244,44 @@ class _FarmDetailsSection extends StatelessWidget {
               title: Text('Location', overflow: TextOverflow.ellipsis),
               subtitle: Text('Nakuru, Kenya', overflow: TextOverflow.ellipsis),
             ),
-            ListTile(
-              leading: Icon(Icons.grass, color: Color(0xFF22c55e)),
-              title: Text('Crop Type', overflow: TextOverflow.ellipsis),
-              subtitle: Text('Onion', overflow: TextOverflow.ellipsis),
+            FutureBuilder<List<String>>(
+              future: _fetchCrops(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const ListTile(
+                    title: Text('Crop Type'),
+                    subtitle: Text('Loading...'),
+                  );
+                } else if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    snapshot.data!.isEmpty) {
+                  return ListTile(
+                    title: Text('Crop Type'),
+                    subtitle: Text('No crops available'),
+                  );
+                } else {
+                  return ListTile(
+                    leading: Icon(Icons.grass, color: Color(0xFF22c55e)),
+                    title: Text('Crop Type', overflow: TextOverflow.ellipsis),
+                    subtitle: DropdownButton<String>(
+                      value: selectedCrop ?? snapshot.data!.first,
+                      items: snapshot.data!
+                          .map(
+                            (crop) => DropdownMenuItem(
+                              value: crop,
+                              child: Text(crop),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCrop = value;
+                        });
+                      },
+                    ),
+                  );
+                }
+              },
             ),
             SwitchListTile(
               value: true,
