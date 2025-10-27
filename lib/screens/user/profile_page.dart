@@ -113,6 +113,9 @@ class _UserInfoSection extends StatelessWidget {
     if (user == null) {
       return const Center(child: Text('No user logged in.'));
     }
+    // Debug print for UID
+    // ignore: avoid_print
+    print('Looking up user with UID: ${user.uid}');
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
           .collection('users')
@@ -122,8 +125,27 @@ class _UserInfoSection extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasError) {
+          // ignore: avoid_print
+          print('Firestore error: \\${snapshot.error}');
+          return Center(child: Text('Error: \\${snapshot.error}'));
+        }
+        // ignore: avoid_print
+        print('Snapshot data: \\${snapshot.data}');
         if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Center(child: Text('User data not found.'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('User data not found.'),
+                const SizedBox(height: 8),
+                Text(
+                  'UID: ${user.uid}',
+                  style: const TextStyle(fontSize: 12, color: Colors.red),
+                ),
+              ],
+            ),
+          );
         }
         final data = snapshot.data!.data() as Map<String, dynamic>?;
         final firstName = data?['firstName'] ?? '';
