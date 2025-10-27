@@ -213,15 +213,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                         setState(() => _isLoading = true);
                                         final email = _emailController.text
                                             .trim();
-                                        if (email == 'admin@gmail.com' &&
-                                            password == 'admin123') {
-                                          Navigator.pushReplacementNamed(
-                                            context,
-                                            '/admin-dashboard',
-                                          );
-                                          setState(() => _isLoading = false);
-                                          return;
-                                        }
                                         try {
                                           final userCredential =
                                               await FirebaseAuth.instance
@@ -230,6 +221,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                                     password: password,
                                                   );
                                           final user = userCredential.user;
+                                          if (user != null &&
+                                              user.email != null &&
+                                              user.email!
+                                                      .trim()
+                                                      .toLowerCase() ==
+                                                  'admin@gmail.com') {
+                                            // Skip email verification for admin
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              '/admin-dashboard',
+                                            );
+                                            setState(() => _isLoading = false);
+                                            return;
+                                          }
                                           if (user != null &&
                                               !user.emailVerified) {
                                             await FirebaseAuth.instance
