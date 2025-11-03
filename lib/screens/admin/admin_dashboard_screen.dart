@@ -1,10 +1,24 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:agrosmart/screens/admin/user_management_page.dart';
 import 'package:agrosmart/screens/admin/irrigation_settings_page.dart';
 import 'package:agrosmart/screens/admin/system_health_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:agrosmart/simulation/sensor_simulator.dart';
+
+// Sensor tip model
+class _SensorTip {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String text;
+  const _SensorTip({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.text,
+  });
+}
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);
@@ -14,301 +28,265 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  User? _user;
-  bool _loading = true;
+  late Future<Map<String, dynamic>> dashboardData;
+  final SensorSimulator _simulator = SensorSimulator();
 
   @override
   void initState() {
     super.initState();
-    _getCurrentUser();
+    dashboardData = fetchDashboardData();
   }
 
-  Future<void> _getCurrentUser() async {
-    setState(() {
-      _loading = true;
-    });
-    _user = FirebaseAuth.instance.currentUser;
-    setState(() {
-      _loading = false;
-    });
-    print('Logged in user email: ${_user?.email}');
-  }
+  Future<Map<String, dynamic>> fetchDashboardData() async {
+    // Fetch real data from Firestore
+    final usersSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .get();
+    final sensorsSnapshot = await FirebaseFirestore.instance
+        .collection('sensors')
+        .where('active', isEqualTo: true)
+        .get();
+    final irrigationSnapshot = await FirebaseFirestore.instance
+        .collection('irrigation_events')
+        .get();
+    final systemHealthSnapshot = await FirebaseFirestore.instance
+        .collection('system_health')
+        .limit(1)
+        .get();
 
-  Future<Map<String, int>> fetchDashboardData() async {
-    final firestore = FirebaseFirestore.instance;
-    final usersSnapshot = await firestore.collection('users').get();
-    // Sensors and Reports are not yet implemented
+    final usersCount = usersSnapshot.size;
+    final activeSensorsCount = sensorsSnapshot.size;
+    final irrigationEventsCount = irrigationSnapshot.size;
+    final systemHealth = systemHealthSnapshot.docs.isNotEmpty
+        ? systemHealthSnapshot.docs.first.data()['status'] ?? 'Unknown'
+        : 'Unknown';
+
     return {
-      'users': usersSnapshot.size,
-      'sensors': -1, // -1 means 'Coming soon'
-      'reports': -1, // -1 means 'Coming soon'
+      'users': usersCount,
+      'activeSensors': activeSensorsCount,
+      'irrigationEvents': irrigationEventsCount,
+      'systemHealth': systemHealth,
     };
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final adminEmail = 'admin@gmail.com';
+  void _reloadDashboard() {
+    setState(() {
+      dashboardData = fetchDashboardData();
+    });
+  }
 
-    final userEmail = _user?.email?.trim().toLowerCase() ?? '';
-    if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
-      );
-    }
-    if (_user == null || userEmail != adminEmail.trim().toLowerCase()) {
-      return Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Access denied',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF43cea2), Color(0xFF185a9d)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: const Center(
-            child: Text(
-              'Access denied: Only admin@gmail.com can view this page.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      );
-    }
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Row(
+  void _logout() {
+    // Implement logout logic
+    Navigator.of(context).pop();
+  }
+
+  Widget buildSimulationControls() {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.dashboard, color: Colors.white, size: 32),
-            const SizedBox(width: 14),
-            Text(
-              'Admin Dashboard',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 28,
-                letterSpacing: 1.2,
-              ),
+            const Text(
+              'Sensor Data Simulation',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AdminDashboardScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white, size: 28),
-              tooltip: 'Logout',
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                if (!mounted) return;
-                Navigator.pushReplacementNamed(context, '/');
-              },
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    if (!_simulator.isRunning) {
+                      _simulator.start();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sensor simulation started!'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Simulation already running.'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Simulate Data'),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_simulator.isRunning) {
+                      _simulator.stop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sensor simulation stopped.'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Simulation is not running.'),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Reset'),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF43cea2), Color(0xFF185a9d)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _reloadDashboard,
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: FutureBuilder<Map<String, int>>(
-                future: fetchDashboardData(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    );
-                  } else if (snapshot.hasError) {
-                    print('Admin dashboard error: ${snapshot.error}');
-                    return Center(
-                      child: Text(
-                        'Error loading data: ${snapshot.error}',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  } else if (snapshot.hasData) {
-                    final data = snapshot.data!;
-                    return SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 32),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(32),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 24,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Flexible(
-                                  child: _buildOverviewCard(
-                                    'Users',
-                                    data['users'].toString(),
-                                    Icons.people,
-                                    Colors.blue,
-                                  ),
-                                ),
-                                Flexible(
-                                  child: _buildOverviewCard(
-                                    'Sensors',
-                                    data['sensors'] == -1
-                                        ? 'Coming soon'
-                                        : data['sensors'].toString(),
-                                    Icons.sensors,
-                                    Colors.teal,
-                                  ),
-                                ),
-                                Flexible(
-                                  child: _buildOverviewCard(
-                                    'Reports',
-                                    data['reports'] == -1
-                                        ? 'Coming soon'
-                                        : data['reports'].toString(),
-                                    Icons.bar_chart,
-                                    Colors.orange,
-                                  ),
-                                ),
-                              ],
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+        ],
+      ),
+      body: SafeArea(
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: dashboardData,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            final data = snapshot.data!;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewCard(
+                            'Users',
+                            data['users'].toString(),
+                            Icons.people,
+                            Colors.blue,
+                          ),
+                        ),
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewCard(
+                            'Sensors',
+                            data['activeSensors'].toString(),
+                            Icons.sensors,
+                            Colors.green,
+                          ),
+                        ),
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewCard(
+                            'Irrigation',
+                            data['irrigationEvents'].toString(),
+                            Icons.water,
+                            Colors.teal,
+                          ),
+                        ),
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: _buildOverviewCard(
+                            'Health',
+                            data['systemHealth'],
+                            Icons.health_and_safety,
+                            Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 400),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 1.2,
+                      children: [
+                        _buildSectionCard(
+                          title: 'User Management',
+                          icon: Icons.manage_accounts,
+                          color: Colors.indigo,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const UserManagementPage(),
                             ),
                           ),
-                          const SizedBox(height: 32),
-                          Text(
-                            'Sections',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24,
-                              color: Colors.white,
-                              letterSpacing: 1.1,
+                        ),
+                        _buildSectionCard(
+                          title: 'Irrigation Settings',
+                          icon: Icons.settings_input_component,
+                          color: Colors.cyan,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const IrrigationSettingsPage(),
                             ),
                           ),
-                          const SizedBox(height: 18),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
-                            child: GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 32,
-                              mainAxisSpacing: 32,
-                              children: [
-                                _buildSectionCard(
-                                  context,
-                                  title: 'User Management',
-                                  icon: Icons.people,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const UserManagementPage(),
-                                    ),
-                                  ),
-                                ),
-                                _buildSectionCard(
-                                  context,
-                                  title: 'Sensor Data',
-                                  icon: Icons.sensors,
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    '/sensor-data',
-                                  ),
-                                ),
-                                _buildSectionCard(
-                                  context,
-                                  title: 'Irrigation Settings',
-                                  icon: Icons.water,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const IrrigationSettingsPage(),
-                                    ),
-                                  ),
-                                ),
-                                _buildSectionCard(
-                                  context,
-                                  title: 'Reports & Analytics',
-                                  icon: Icons.bar_chart,
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    '/reports-analytics',
-                                  ),
-                                ),
-                                _buildSectionCard(
-                                  context,
-                                  title: 'System Settings',
-                                  icon: Icons.settings,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const SystemSettingsPage(),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                        ),
+                        _buildSectionCard(
+                          title: 'System Health',
+                          icon: Icons.monitor_heart,
+                          color: Colors.deepOrange,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SystemSettingsPage(),
                             ),
                           ),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-                    );
-                  } else {
-                    return const Center(
-                      child: Text(
-                        'No data available',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }
-                },
+                        ),
+                        _buildSectionCard(
+                          title: 'Sensor Simulation',
+                          icon: Icons.science,
+                          color: Colors.purple,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => Scaffold(
+                                appBar: AppBar(
+                                  title: const Text('Sensor Simulator'),
+                                ),
+                                body: const Center(
+                                  child: Text('Sensor simulation running...'),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  buildSimulationControls(),
+                  const SizedBox(height: 32),
+                  AnimatedSensorInfo(),
+                ],
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -320,43 +298,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color color,
   ) {
-    return Container(
-      width: 180,
-      height: 120,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.18), color.withOpacity(0.08)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18.0),
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 90,
+        height: 90,
+        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 44, color: color),
-            const SizedBox(height: 10),
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 8),
             Text(
               value,
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            const SizedBox(height: 6),
             Text(
               title,
-              style: TextStyle(fontSize: 17, color: color.withOpacity(0.8)),
+              style: TextStyle(color: Colors.grey[700], fontSize: 14),
             ),
           ],
         ),
@@ -364,62 +324,130 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildSectionCard(
-    BuildContext context, {
+  Widget _buildSectionCard({
     required String title,
     required IconData icon,
+    required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 32.0,
-              horizontal: 18.0,
-            ),
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          height: 120,
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(18),
-                  child: Icon(
-                    icon,
-                    size: 44,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 20),
+                Icon(icon, color: color, size: 36),
+                const SizedBox(height: 12),
                 Text(
                   title,
-                  textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class AnimatedSensorInfo extends StatefulWidget {
+  @override
+  State<AnimatedSensorInfo> createState() => _AnimatedSensorInfoState();
+}
+
+class _AnimatedSensorInfoState extends State<AnimatedSensorInfo> {
+  final List<_SensorTip> tips = [
+    _SensorTip(
+      icon: Icons.water_drop,
+      color: Colors.teal,
+      title: 'Soil Moisture',
+      text: 'Use a percentage (e.g., 20–80%), changes gradually.',
+    ),
+    _SensorTip(
+      icon: Icons.thermostat,
+      color: Colors.orange,
+      title: 'Temperature (dht22)',
+      text: 'Use °C, e.g., 15–35°C, small random drift.',
+    ),
+    _SensorTip(
+      icon: Icons.cloud,
+      color: Colors.blue,
+      title: 'Humidity',
+      text: 'Use %, e.g., 40–90%, changes slowly.',
+    ),
+    _SensorTip(
+      icon: Icons.wb_sunny,
+      color: Colors.yellow,
+      title: 'Light (ldr)',
+      text: 'Use lux, e.g., 100–1000, varies with time of day.',
+    ),
+    _SensorTip(
+      icon: Icons.grain,
+      color: Colors.indigo,
+      title: 'Rain',
+      text: 'Use 0 (no rain) or 1 (rain), changes rarely.',
+    ),
+  ];
+  int _current = 0;
+  late final PageController _controller;
+  late final Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      setState(() {
+        _current = (_current + 1) % tips.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tip = tips[_current];
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(tip.icon, color: tip.color, size: 32),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tip.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(tip.text, style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+          ],
         ),
       ),
     );

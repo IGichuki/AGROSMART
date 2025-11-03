@@ -5,10 +5,10 @@ import 'screens/signup_screen.dart';
 import 'screens/user/user_dashboard_screen.dart';
 import 'screens/user/analytics_page.dart';
 import 'screens/user/irrigation_page.dart';
-import 'screens/user/settings_page.dart';
 import 'screens/user/profile_page.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'widgets/weather_widget.dart';
+import 'screens/user/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,16 +127,7 @@ class _MyAppWithThemeState extends State<MyAppWithTheme> {
           return AnalyticsPage(lastName: lastName, navIndex: navIndex);
         },
         '/irrigation': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          final navIndex = args != null && args['navIndex'] != null
-              ? args['navIndex'] as int
-              : 2;
-          return IrrigationPage(lastName: lastName, navIndex: navIndex);
+          return IrrigationPage();
         },
         '/settings': (context) {
           final args =
@@ -246,13 +237,7 @@ class MyApp extends StatelessWidget {
           return AnalyticsPage(lastName: lastName);
         },
         '/irrigation': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          return IrrigationPage(lastName: lastName);
+          return IrrigationPage();
         },
         '/settings': (context) {
           final args =
