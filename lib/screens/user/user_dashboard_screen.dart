@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -44,94 +45,45 @@ class UserDashboardScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FDF9),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x11000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF22c55e),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF22c55e),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: const Icon(
-                            FontAwesomeIcons.droplet,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'AGROSMART',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF22c55e),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Flexible(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF22c55e),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: const [
-                                Icon(Icons.wifi, color: Colors.white, size: 18),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Connected',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.settings,
-                            color: Colors.grey,
-                            size: 22,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
+              padding: const EdgeInsets.all(8),
+              child: const Icon(
+                FontAwesomeIcons.droplet,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            const Text(
+              'AGROSMART',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF22c55e),
+              ),
+            ),
+          ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Color(0xFF22c55e)),
+            tooltip: 'Logout',
+            onPressed: () async {
+              // If using Firebase Auth
+              // await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
       body: currentIndex == 0
           ? RefreshIndicator(
@@ -139,7 +91,16 @@ class UserDashboardScaffold extends StatelessWidget {
                 // Add your reload logic here
                 await Future.delayed(const Duration(seconds: 1));
               },
-              child: ListView(children: [body]),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Column(
+                    children: [
+                      Expanded(child: body),
+                      Flexible(child: AnimatedSensorInfo()),
+                    ],
+                  );
+                },
+              ),
             )
           : body,
       bottomNavigationBar: Container(
@@ -235,4 +196,150 @@ class _NavButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// Animated info section for user dashboard
+class AnimatedSensorInfo extends StatefulWidget {
+  @override
+  State<AnimatedSensorInfo> createState() => _AnimatedSensorInfoState();
+}
+
+class _AnimatedSensorInfoState extends State<AnimatedSensorInfo> {
+  final List<_SensorTip> tips = [
+    _SensorTip(
+      icon: Icons.water_drop,
+      color: Colors.teal,
+      title: 'Soil Moisture',
+      text:
+          'Displayed as a percentage (e.g., 20%–80%). Values change gradually to reflect real soil conditions.',
+    ),
+    _SensorTip(
+      icon: Icons.thermostat,
+      color: Colors.orange,
+      title: 'Temperature (DHT22)',
+      text:
+          'Shown in °C, typically 15°C–35°C. Small random fluctuations make readings realistic.',
+    ),
+    _SensorTip(
+      icon: Icons.cloud,
+      color: Colors.blue,
+      title: 'Humidity',
+      text:
+          'Presented as a percentage (e.g., 40%–90%). Changes are slow and steady.',
+    ),
+    _SensorTip(
+      icon: Icons.wb_sunny,
+      color: Colors.yellow[700]!,
+      title: 'Light (LDR)',
+      text:
+          'Indicated in lux (e.g., 100–1000 lux). Values vary according to the time of day.',
+    ),
+    _SensorTip(
+      icon: Icons.grain,
+      color: Colors.indigo,
+      title: 'Rain',
+      text: '0 means no rain, 1 means rain. This value changes infrequently.',
+    ),
+  ];
+  int _current = 0;
+  late final PageController _controller;
+  late final Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      setState(() {
+        _current = (_current + 1) % tips.length;
+        _controller.animateToPage(
+          _current,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 18),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.green[50],
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(color: Colors.green.withOpacity(0.08), blurRadius: 8),
+        ],
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.16,
+        child: PageView.builder(
+          controller: _controller,
+          itemCount: tips.length,
+          physics: const NeverScrollableScrollPhysics(),
+          itemBuilder: (context, i) {
+            final tip = tips[i];
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor: tip.color.withOpacity(0.18),
+                  child: Icon(tip.icon, color: tip.color, size: 32),
+                  radius: 32,
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tip.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: tip.color,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        tip.text,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SensorTip {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String text;
+  const _SensorTip({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.text,
+  });
 }
