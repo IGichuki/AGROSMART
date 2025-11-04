@@ -40,37 +40,38 @@ This guide provides step-by-step instructions for connecting all hardware compon
 - Connect ESP32-CAM GND and 3.3V/5V to breadboard rails.
 
 ### 3. Sensor Connections
-- **Soil Moisture Sensor:**
-  - VCC → 3.3V/5V rail
-  - GND → GND rail
-  - Signal → ESP32-CAM GPIO34 (pin 34)
-- **DHT22 Sensor:**
-  - VCC → 3.3V/5V rail
-  - GND → GND rail
-  - Data → ESP32-CAM GPIO15 (pin 15)
-- **LDR Sensor:**
-  - One leg → 3.3V/5V rail
-  - Other leg → ESP32-CAM GPIO35 (pin 35) and 10K Ohm resistor to GND
-- **Rain/Snow Sensor:**
-  - VCC → 3.3V/5V rail
-  - GND → GND rail
-  - Signal → ESP32-CAM GPIO13 (pin 13)
-
-### 4. Output Devices
-- **Relay Module:**
+**Soil Moisture Sensor (Analog Output):**
   - VCC → 5V rail
   - GND → GND rail
-  - IN → ESP32-CAM GPIO12 (pin 12)
+  - AO (Signal) → ESP32-CAM GPIO14
+**DHT22 Temperature & Humidity Sensor:**
+  - VCC → 5V rail
+  - GND → GND rail
+  - Data → ESP32-CAM GPIO2
+**LDR Light Sensor (Analog Output):**
+  - VCC → 5V rail
+  - GND → GND rail
+  - AO (Signal) → ESP32-CAM GPIO12 and 10K Ohm resistor to GND
+**Rain Sensor (Digital Output):**
+  - VCC → 5V rail
+  - GND → GND rail
+  - DO (Signal) → ESP32-CAM GPIO15
+
+### 4. Output Devices
+**Relay Module (for Water Pump):**
+  - VCC → 5V rail
+  - GND → GND rail
+  - IN → ESP32-CAM GPIO13
 - **Water Pump:**
   - Connect pump power to relay output
   - Silicone tube to water source
 - **LED Traffic Light Module & White LEDs:**
   - Connect to ESP32-CAM GPIO14 (pin 14), GPIO16 (pin 16)
-- **LCD1602 I2C Module:**
+**LCD1602 I2C Module:**
   - VCC → 5V rail
   - GND → GND rail
-  - SDA → ESP32-CAM GPIO21 (pin 21)
-  - SCL → ESP32-CAM GPIO22 (pin 22)
+  - SDA → ESP32-CAM GPIO1
+  - SCL → ESP32-CAM GPIO3
 
 ### 5. Diodes & Potentiometer
 - Use diodes for reverse current protection on relay and pump circuits.
@@ -94,8 +95,18 @@ This guide provides step-by-step instructions for connecting all hardware compon
 - Use a multimeter to verify voltages.
 - Refer to each module’s datasheet for pinouts.
 
+## Pin Summary (matches code)
+## Pin Summary (matches code)
+- Soil Moisture AO: GPIO 14
+- DHT22 DATA: GPIO 2
+- LDR AO: GPIO 12
+- Rain DO: GPIO 15
+- Relay IN: GPIO 13
+- LCD I2C SDA: GPIO 1
+- LCD I2C SCL: GPIO 3
+
 ## Example Wiring Diagram
-- (Add a hand-drawn or Fritzing diagram here for clarity.)
+(Add a hand-drawn or Fritzing diagram here for clarity.)
 
 ## Troubleshooting
 - If a sensor doesn’t work, check wiring and pin assignments.
