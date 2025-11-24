@@ -6,151 +6,19 @@ import 'screens/user/user_dashboard_screen.dart';
 import 'screens/user/analytics_page.dart';
 import 'screens/user/irrigation_page.dart';
 import 'screens/user/profile_page.dart';
-import 'screens/admin/admin_dashboard_screen.dart';
-import 'widgets/weather_widget.dart';
+// ...existing code...
 import 'screens/user/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyAppWithTheme());
+  runApp(const MyApp());
 }
 
-class MyAppWithTheme extends StatefulWidget {
-  @override
-  State<MyAppWithTheme> createState() => _MyAppWithThemeState();
-}
-
-class _MyAppWithThemeState extends State<MyAppWithTheme> {
-  final ValueNotifier<bool> isDarkMode = ValueNotifier(false);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Agrosmart',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: isDarkMode.value ? Brightness.dark : Brightness.light,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          primary: Colors.green[800]!,
-          secondary: Colors.brown[400]!,
-          brightness: isDarkMode.value ? Brightness.dark : Brightness.light,
-        ),
-        scaffoldBackgroundColor: isDarkMode.value
-            ? Colors.grey[900]
-            : Colors.green[50],
-        appBarTheme: AppBarTheme(
-          backgroundColor: isDarkMode.value
-              ? Colors.grey[850]
-              : const Color(0xFF388E3C),
-          foregroundColor: Colors.white,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(),
-          filled: true,
-          fillColor: isDarkMode.value ? Colors.grey[800] : Colors.white,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green[700],
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/profile': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          return ProfilePage(lastName: lastName);
-        },
-        '/user-dashboard': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          final navIndex = args != null && args['navIndex'] != null
-              ? args['navIndex'] as int
-              : 0;
-          return UserDashboardScaffold(
-            lastName: lastName,
-            currentIndex: navIndex,
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Welcome, $lastName',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 22,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Weather widget below welcome
-                  SizedBox(width: double.infinity, child: WeatherWidget()),
-                ],
-              ),
-            ),
-          );
-        },
-        '/analytics': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          final navIndex = args != null && args['navIndex'] != null
-              ? args['navIndex'] as int
-              : 1;
-          return AnalyticsPage(lastName: lastName, navIndex: navIndex);
-        },
-        '/irrigation': (context) {
-          return IrrigationPage();
-        },
-        '/settings': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          final navIndex = args != null && args['navIndex'] != null
-              ? args['navIndex'] as int
-              : 3;
-          return SettingsPage(lastName: lastName, navIndex: navIndex);
-        },
-        '/admin-dashboard': (context) => const AdminDashboardScreen(),
-      },
-    );
-  }
-}
-
+// ...existing code...
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -167,7 +35,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: Color(0xFF388E3C),
           foregroundColor: Colors.white,
         ),
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),
           filled: true,
           fillColor: Colors.white,
@@ -236,18 +104,8 @@ class MyApp extends StatelessWidget {
               : '';
           return AnalyticsPage(lastName: lastName);
         },
-        '/irrigation': (context) {
-          return IrrigationPage();
-        },
-        '/settings': (context) {
-          final args =
-              ModalRoute.of(context)?.settings.arguments
-                  as Map<String, dynamic>?;
-          final lastName = args != null && args['lastName'] != null
-              ? args['lastName'] as String
-              : '';
-          return SettingsPage(lastName: lastName);
-        },
+        '/irrigation': (context) => IrrigationPage(),
+        '/settings': (context) => const SettingsPage(),
         '/profile': (context) {
           final args =
               ModalRoute.of(context)?.settings.arguments
@@ -257,11 +115,12 @@ class MyApp extends StatelessWidget {
               : '';
           return ProfilePage(lastName: lastName);
         },
-        '/admin-dashboard': (context) => const AdminDashboardScreen(),
+        // Removed duplicate route for '/admin-dashboard'
       },
     );
   }
 }
+// ...existing code...
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});

@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class SettingsPage extends StatelessWidget {
-  final String? lastName;
-  final int? navIndex;
   final List<Map<String, dynamic>> sensors = const [
     {
       "name": "Soil Moisture",
       "icon": Icons.water_drop,
-      "key": "soil_moisture",
+      "key": "soilMoisture",
       "color": Colors.teal,
     },
     {
-      "name": "Temperature & Humidity",
+      "name": "Temperature",
       "icon": Icons.thermostat,
-      "key": "dht22",
+      "key": "temperature",
       "color": Colors.orange,
+    },
+    {
+      "name": "Humidity",
+      "icon": Icons.water,
+      "key": "humidity",
+      "color": Colors.blueAccent,
     },
     {
       "name": "Light Sensor",
       "icon": Icons.wb_sunny,
-      "key": "ldr",
+      "key": "light",
       "color": Colors.yellow,
     },
     {
@@ -30,102 +34,28 @@ class SettingsPage extends StatelessWidget {
       "key": "rain",
       "color": Colors.blue,
     },
-    {
-      "name": "Water Pump",
-      "icon": Icons.opacity,
-      "key": "water_pump",
-      "color": Colors.indigo,
-    },
   ];
 
-  const SettingsPage({Key? key, this.lastName, this.navIndex})
-    : super(key: key);
-
-  static Widget tipBullet(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.check_circle, color: Colors.green[400], size: 18),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  const SettingsPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () =>
-              Navigator.pushReplacementNamed(context, '/user-dashboard'),
-          tooltip: 'Back',
-        ),
         title: const Text('System Health'),
         backgroundColor: Colors.green[700],
-        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/user-dashboard', (route) => false),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                Navigator.pushReplacementNamed(context, '/settings'),
-            tooltip: 'Reload',
-          ),
-          IconButton(
-            icon: const Icon(Icons.restart_alt),
-            tooltip: 'Reset All Sensors',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Confirm Reset'),
-                  content: const Text(
-                    'Are you sure you want to reset all sensor graphs? This will delete all historical sensor data.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                      ),
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Reset'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                // Delete all historical sensor data
-                for (final sensor in sensors) {
-                  final col = FirebaseFirestore.instance
-                      .collection('sensors')
-                      .doc(sensor['key'])
-                      .collection('values');
-                  final snapshots = await col.get();
-                  for (final doc in snapshots.docs) {
-                    await doc.reference.delete();
-                  }
-                }
-                // Optionally show a snackbar
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('All sensor graphs have been reset.'),
-                  ),
-                );
-              }
+            onPressed: () {
+              // Force rebuild to reload data
+              (context as Element).reassemble();
             },
           ),
         ],
@@ -145,31 +75,38 @@ class SettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.1,
-                children: sensors.map((sensor) {
-                  return StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('sensors')
-                        .doc(sensor['key'])
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      final status =
-                          snapshot.data?.data() as Map<String, dynamic>?;
-                      final value = status?['value'];
-                      final timestamp = status?['timestamp'] is Timestamp
-                          ? (status?['timestamp'] as Timestamp).toDate()
+              child: StreamBuilder<DatabaseEvent>(
+                stream: FirebaseDatabase.instance
+                    .ref()
+                    .child('sensorData')
+                    .onValue,
+                builder: (context, snapshot) {
+                  Map<String, dynamic>? latestData;
+                  if (snapshot.hasData &&
+                      snapshot.data != null &&
+                      snapshot.data!.snapshot.value != null) {
+                    final value = snapshot.data!.snapshot.value;
+                    if (value is Map) {
+                      final entries = Map<String, dynamic>.from(value);
+                      if (entries.isNotEmpty) {
+                        final lastKey = entries.keys.last;
+                        final lastEntry = entries[lastKey];
+                        if (lastEntry is Map) {
+                          latestData = Map<String, dynamic>.from(lastEntry);
+                        }
+                      }
+                    }
+                  }
+                  return GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.1,
+                    children: sensors.map((sensor) {
+                      final sensorKey = sensor['key'];
+                      final sensorValue = latestData != null
+                          ? latestData[sensorKey]
                           : null;
-                      final connected =
-                          value != null &&
-                          timestamp != null &&
-                          DateTime.now().difference(timestamp).inSeconds < 60;
-                      final timeStr = timestamp != null
-                          ? "${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}"
-                          : '--';
                       return Material(
                         color: Colors.white,
                         elevation: 4,
@@ -186,137 +123,138 @@ class SettingsPage extends StatelessWidget {
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(12.0),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: sensor['color']
-                                        .withOpacity(0.15),
-                                    radius: 24,
-                                    child: Icon(
-                                      sensor['icon'],
-                                      color: sensor['color'],
-                                      size: 28,
-                                    ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: sensor['color'].withOpacity(
+                                    0.15,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    sensor['name'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
+                                  radius: 24,
+                                  child: Icon(
+                                    sensor['icon'],
+                                    color: sensor['color'],
+                                    size: 28,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    connected ? 'Connected' : 'Disconnected',
-                                    style: TextStyle(
-                                      color: connected
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  sensor['name'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
                                   ),
-                                  Text(
-                                    'Last: $timeStr',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  if (value != null)
-                                    Text(
-                                      'Value: $value',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  sensorValue != null
+                                      ? 'Value: $sensorValue'
+                                      : 'No data',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       );
-                    },
+                    }).toList(),
                   );
-                }).toList(),
+                },
               ),
             ),
-            // Enhanced Tips section
-            Text(
-              'Tips',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[800],
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Limit tips section height to 1/4 of screen
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.25,
-              child: SingleChildScrollView(
-                child: Card(
-                  color: Colors.white,
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 18.0,
-                      horizontal: 16.0,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Colors.green[700],
-                              size: 22,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'How to read the graphs:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green[900],
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        SettingsPage.tipBullet(
-                          'The x-axis shows the order of recent sensor readings.',
-                        ),
-                        SettingsPage.tipBullet(
-                          'The y-axis shows the actual sensor value (e.g., moisture, temperature, etc.).',
-                        ),
-                        SettingsPage.tipBullet(
-                          'Tap a sensor card to view its recent data as a graph.',
-                        ),
-                        SettingsPage.tipBullet(
-                          '"Connected" means the sensor sent data in the last minute.',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
+
+  void startPump() async {
+    print('Start button pressed');
+    try {
+      await FirebaseDatabase.instance.ref('/pump/manual').set(1);
+      print('Pump ON sent');
+    } catch (e) {
+      print('Error sending pump ON: $e');
+    }
+  }
+
+  void stopPump() async {
+    print('Stop button pressed');
+    try {
+      await FirebaseDatabase.instance.ref('/pump/manual').set(0);
+      print('Pump OFF sent');
+    } catch (e) {
+      print('Error sending pump OFF: $e');
+    }
+  }
 }
 
-class SensorChartDialog extends StatelessWidget {
+class SensorChartDialog extends StatefulWidget {
   final Map<String, dynamic> sensor;
   const SensorChartDialog({Key? key, required this.sensor}) : super(key: key);
+
+  @override
+  State<SensorChartDialog> createState() => _SensorChartDialogState();
+}
+
+class _SensorChartDialogState extends State<SensorChartDialog> {
+  List<double> sensorValues = [];
+  List<String> xLabels = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSensorHistory();
+  }
+
+  Future<void> _fetchSensorHistory() async {
+    final ref = FirebaseDatabase.instance.ref().child('sensorData');
+    final snapshot = await ref.get();
+    List<double> values = [];
+    List<String> labels = [];
+    if (snapshot.value is Map) {
+      final entries = Map<String, dynamic>.from(snapshot.value as Map);
+      // Get last 20 entries
+      final lastEntries = entries.entries
+          .toList()
+          .reversed
+          .take(20)
+          .toList()
+          .reversed;
+      for (final entry in lastEntries) {
+        final data = entry.value;
+        if (data is Map && data[widget.sensor['key']] != null) {
+          final val = data[widget.sensor['key']];
+          double? parsed;
+          if (val is int || val is double) {
+            parsed = val.toDouble();
+          } else if (val is String) {
+            parsed = double.tryParse(val);
+          }
+          if (parsed != null) {
+            values.add(parsed);
+            // Use timestamp for x-axis label if available
+            if (data['timestamp'] != null) {
+              int ts = data['timestamp'] is int
+                  ? data['timestamp']
+                  : int.tryParse(data['timestamp'].toString()) ?? 0;
+              final dt = DateTime.fromMillisecondsSinceEpoch(ts * 1000);
+              labels.add("${dt.hour}:${dt.minute.toString().padLeft(2, '0')}");
+            } else {
+              labels.add(entry.key.substring(0, 6));
+            }
+          }
+        }
+      }
+    }
+    setState(() {
+      sensorValues = values;
+      xLabels = labels;
+      loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -331,13 +269,17 @@ class SensorChartDialog extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: sensor['color'].withOpacity(0.15),
-                  child: Icon(sensor['icon'], color: sensor['color'], size: 28),
+                  backgroundColor: widget.sensor['color'].withOpacity(0.15),
+                  child: Icon(
+                    widget.sensor['icon'],
+                    color: widget.sensor['color'],
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    sensor['name'],
+                    widget.sensor['name'],
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -347,125 +289,62 @@ class SensorChartDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('sensors')
-                  .doc(sensor['key'])
-                  .collection('values')
-                  .orderBy('timestamp', descending: false)
-                  .limit(20)
-                  .snapshots(),
-              builder: (context, snap) {
-                List<FlSpot> chartSpots = [];
-                if (snap.hasData) {
-                  int i = 0;
-                  for (var doc in snap.data!.docs) {
-                    final v = doc['value'];
-                    if (v != null && v is num) {
-                      chartSpots.add(FlSpot(i.toDouble(), v.toDouble()));
-                      i++;
-                    }
-                  }
-                }
-                return SizedBox(
-                  height: 200,
-                  child: chartSpots.isEmpty
-                      ? const Center(child: Text('No data available'))
-                      : LineChart(
-                          LineChartData(
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: chartSpots,
-                                isCurved: true,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    sensor['color'],
-                                    sensor['color'].withOpacity(0.5),
-                                  ],
-                                ),
-                                barWidth: 3,
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      sensor['color'].withOpacity(0.3),
-                                      sensor['color'].withOpacity(0.1),
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                ),
-                                dotData: FlDotData(
-                                  show: true,
-                                  getDotPainter: (spot, _, __, ___) {
-                                    if (chartSpots.isNotEmpty &&
-                                        spot.x == chartSpots.last.x &&
-                                        spot.y == chartSpots.last.y) {
-                                      return FlDotCirclePainter(
-                                        radius: 6,
-                                        color: Colors.red,
-                                        strokeWidth: 2,
-                                        strokeColor: Colors.white,
-                                      );
-                                    }
-                                    return FlDotCirclePainter(
-                                      radius: 3,
-                                      color: sensor['color'],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize:
-                                      40, // increase space for y-axis labels
-                                  getTitlesWidget: (value, meta) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 8.0,
-                                      ),
-                                      child: Text(
-                                        value.toInt().toString(),
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.black,
-                                        ),
-                                        textAlign: TextAlign
-                                            .right, // ensure horizontal alignment
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: true),
-                              ),
+            SizedBox(
+              height: 180,
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : sensorValues.isEmpty
+                  ? const Center(child: Text('No data available'))
+                  : LineChart(
+                      LineChartData(
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                        ),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 32,
                             ),
-                            gridData: FlGridData(show: true),
-                            borderData: FlBorderData(show: false),
-                            lineTouchData: LineTouchData(
-                              enabled: true,
-                              touchTooltipData: LineTouchTooltipData(
-                                getTooltipItems: (touchedSpots) {
-                                  return touchedSpots.map((touchedSpot) {
-                                    return LineTooltipItem(
-                                      "${touchedSpot.y.toStringAsFixed(2)}",
-                                      const TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    );
-                                  }).toList();
-                                },
-                              ),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                int idx = value.toInt();
+                                if (idx >= 0 && idx < xLabels.length) {
+                                  return Text(
+                                    xLabels[idx],
+                                    style: const TextStyle(fontSize: 10),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                              interval: 1,
+                              reservedSize: 32,
                             ),
                           ),
                         ),
-                );
-              },
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: List.generate(
+                              sensorValues.length,
+                              (i) => FlSpot(i.toDouble(), sensorValues[i]),
+                            ),
+                            isCurved: true,
+                            color: widget.sensor['color'],
+                            barWidth: 4,
+                            dotData: FlDotData(show: true),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: widget.sensor['color'].withOpacity(0.08),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
             ),
             const SizedBox(height: 10),
             Align(
