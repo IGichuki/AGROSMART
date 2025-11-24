@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+// Store the active crop for demo (replace with proper state management in production)
+String? activeCrop;
+
 class SystemSettingsPage extends StatefulWidget {
   const SystemSettingsPage({Key? key}) : super(key: key);
 
@@ -9,7 +12,7 @@ class SystemSettingsPage extends StatefulWidget {
 }
 
 class _SystemSettingsPageState extends State<SystemSettingsPage> {
-  final _formKey = GlobalKey<FormState>();
+  // final _formKey = GlobalKey<FormState>();
   final _newCropController = TextEditingController();
   String? selectedCrop;
   final Map<String, dynamic> thresholds = {
@@ -82,25 +85,6 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         thresholds['irrigationDuration'] = doc['irrigationDuration'] ?? 30;
         thresholds['humidityRange'] = doc['humidityRange'] ?? '40-60%';
       });
-    }
-  }
-
-  void _updateThresholds() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      _formKey.currentState?.save();
-      try {
-        await FirebaseFirestore.instance
-            .collection('cropThresholds')
-            .doc(selectedCrop)
-            .update(thresholds);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thresholds updated successfully!')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update thresholds: $e')),
-        );
-      }
     }
   }
 
@@ -216,104 +200,60 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: selectedCrop != null
-                                    ? () => _deleteCrop(selectedCrop!)
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: selectedCrop != null
+                                        ? () {
+                                            setState(() {
+                                              activeCrop = selectedCrop;
+                                            });
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Using crop: $selectedCrop',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text('Use'),
                                   ),
-                                ),
-                                child: const Text('Delete Selected Crop'),
+                                  const SizedBox(width: 16),
+                                  ElevatedButton(
+                                    onPressed: selectedCrop != null
+                                        ? () => _deleteCrop(selectedCrop!)
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text('Delete Selected Crop'),
+                                  ),
+                                ],
                               ),
                             ],
                           );
                         }
                       },
                     ),
-                    const SizedBox(height: 16),
-                    if (selectedCrop != null)
-                      Expanded(
-                        child: Form(
-                          key: _formKey,
-                          child: ListView(
-                            children: [
-                              _buildThresholdField(
-                                label: 'Soil Moisture Min (%)',
-                                initialValue: thresholds['soilMoistureMin']
-                                    .toString(),
-                                onSaved: (value) =>
-                                    thresholds['soilMoistureMin'] = int.parse(
-                                      value!,
-                                    ),
-                              ),
-                              _buildThresholdField(
-                                label: 'Soil Moisture Max (%)',
-                                initialValue: thresholds['soilMoistureMax']
-                                    .toString(),
-                                onSaved: (value) =>
-                                    thresholds['soilMoistureMax'] = int.parse(
-                                      value!,
-                                    ),
-                              ),
-                              _buildThresholdField(
-                                label: 'Irrigation Duration (mins)',
-                                initialValue: thresholds['irrigationDuration']
-                                    .toString(),
-                                onSaved: (value) =>
-                                    thresholds['irrigationDuration'] =
-                                        int.parse(value!),
-                              ),
-                              _buildThresholdField(
-                                label: 'Humidity Range (%)',
-                                initialValue: thresholds['humidityRange'],
-                                onSaved: (value) =>
-                                    thresholds['humidityRange'] = value!,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    if (selectedCrop != null)
-                      ElevatedButton(
-                        onPressed: _updateThresholds,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Update Thresholds'),
-                      ),
+                    // ...existing code...
                   ],
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildThresholdField({
-    required String label,
-    required String initialValue,
-    required void Function(String?) onSaved,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        initialValue: initialValue,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        validator: (value) =>
-            value == null || value.isEmpty ? 'Enter $label' : null,
-        onSaved: onSaved,
       ),
     );
   }

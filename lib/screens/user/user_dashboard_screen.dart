@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../widgets/weather_widget.dart';
 
 // A reusable scaffold for all user dashboard pages, with consistent header and bottom nav.
 class UserDashboardScaffold extends StatelessWidget {
@@ -88,18 +89,29 @@ class UserDashboardScaffold extends StatelessWidget {
       body: currentIndex == 0
           ? RefreshIndicator(
               onRefresh: () async {
-                // Add your reload logic here
                 await Future.delayed(const Duration(seconds: 1));
               },
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Column(
-                    children: [
-                      Expanded(child: body),
-                      Flexible(child: AnimatedSensorInfo()),
-                    ],
-                  );
-                },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: Text(
+                      lastName.isNotEmpty ? 'Welcome $lastName' : 'Welcome!',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                    child: WeatherWidget(),
+                  ),
+                  Expanded(child: body),
+                  AnimatedSensorInfo(),
+                ],
               ),
             )
           : body,

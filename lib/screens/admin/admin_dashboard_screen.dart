@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agrosmart/screens/admin/user_management_page.dart';
 import 'package:agrosmart/screens/admin/irrigation_settings_page.dart';
 import 'package:agrosmart/screens/admin/system_health_page.dart';
@@ -75,9 +76,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
-  void _logout() {
-    // Implement logout logic
-    Navigator.of(context).pop();
+  void _logout() async {
+    // Properly sign out and navigate to login
+    try {
+      // If using Firebase Auth, sign out
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {}
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
   Widget buildSimulationControls() {
@@ -243,7 +250,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const IrrigationSettingsPage(),
+                              builder: (_) => IrrigationSettingsPage(),
                             ),
                           ),
                         ),
@@ -298,27 +305,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color color,
   ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 90,
-        height: 90,
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              title,
-              style: TextStyle(color: Colors.grey[700], fontSize: 14),
-            ),
-          ],
+    return Flexible(
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              Text(
+                title,
+                style: TextStyle(color: Colors.grey[700], fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -330,16 +340,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          height: 120,
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
+    return Flexible(
+      child: Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -430,22 +439,30 @@ class _AnimatedSensorInfoState extends State<AnimatedSensorInfo> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(tip.icon, color: tip.color, size: 32),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tip.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tip.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(tip.text, style: const TextStyle(fontSize: 14)),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    tip.text,
+                    style: const TextStyle(fontSize: 14),
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
